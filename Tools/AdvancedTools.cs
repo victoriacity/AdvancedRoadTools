@@ -992,9 +992,9 @@ namespace AdvancedRoadTools.Tools
             }
 
             GetRound(m_pos1, m_radius * 8f, ref partA, ref partB, ref partC, ref partD);
-            FindNodeA(true, m_pos0, GetNodeDir(m_node0), partA, partB, partC, partD, out Vector3 NodeA1, out Vector3 NodeA1Dir, out Vector3 startDir);
+            FindNodeA(true, m_pos0, GetNodeDir(m_node0), m_pos1, m_radius * 8f, out Vector3 NodeA1, out Vector3 NodeA1Dir, out Vector3 startDir);
             FindNodeB(m_pos0, startDir, partA, partB, partC, partD, out Vector3 NodeB1, out Vector3 NodeB1Dir);
-            FindNodeA(false, m_pos2, GetNodeDir(m_node2), partA, partB, partC, partD, out Vector3 NodeA2, out Vector3 NodeA2Dir, out Vector3 endDir);
+            FindNodeA(false, m_pos2, GetNodeDir(m_node2), m_pos1, m_radius * 8f, out Vector3 NodeA2, out Vector3 NodeA2Dir, out Vector3 endDir);
             endDir = -endDir;
             FindNodeB(m_pos2, endDir, partA, partB, partC, partD, out Vector3 NodeB2, out Vector3 NodeB2Dir);
             bool rightTurn = false;
@@ -1648,212 +1648,36 @@ namespace AdvancedRoadTools.Tools
             }*/
             return "No";
         }
-        public void FindNodeA(bool isStart, Vector3 startPos, Vector3 startDir, Bezier3 partA, Bezier3 partB, Bezier3 partC, Bezier3 partD, out Vector3 NodeA, out Vector3 NodeADir, out Vector3 startDirFix)
+
+
+        public void FindNodeA(bool isStart, Vector3 startPos, Vector3 startDir, Vector3 center, float radius, out Vector3 NodeA, out Vector3 NodeADir, out Vector3 startDirFix)
         {
-            NodeA = Vector3.zero;
-            NodeADir = Vector3.zero;
-            startDirFix = startDir;
-            var tmpNodeA = Vector3.zero;
-            var tmpNodeADir = Vector3.zero;
-            var tmpDiff = 100f;
-            var tmpDiff1 = 100f;
-            //partA
-            for (int i = 0; i < 255; i++)
-            {
-                float p = (float)i / (float)(255);
-                var dir = isStart ? -VectorUtils.NormalizeXZ(partA.Tangent(p)) : VectorUtils.NormalizeXZ(partA.Tangent(p));
-                string result = isRound(startPos, startDir, partA.Position(p), dir, out float diff);
-                if (result == "Yes")
-                {
-                    NodeA = partA.Position(p);
-                    NodeADir = partA.Tangent(p);
-                    return;
-                }
-                else if (result == "Maybe")
-                {
-                    if (diff < tmpDiff)
-                    {
-                        tmpNodeA = partA.Position(p);
-                        tmpNodeADir = partA.Tangent(p);
-                        tmpDiff = diff;
-                    }
-                }
-            }
-            //partB
-            for (int i = 0; i < 255; i++)
-            {
-                float p = (float)i / (float)(255);
-                var dir = isStart ? -VectorUtils.NormalizeXZ(partB.Tangent(p)) : VectorUtils.NormalizeXZ(partB.Tangent(p));
-                string result = isRound(startPos, startDir, partB.Position(p), dir, out float diff);
-                if (result == "Yes")
-                {
-                    NodeA = partB.Position(p);
-                    NodeADir = partB.Tangent(p);
-                    return;
-                }
-                else if (result == "Maybe")
-                {
-                    if (diff < tmpDiff)
-                    {
-                        tmpNodeA = partB.Position(p);
-                        tmpNodeADir = partB.Tangent(p);
-                        tmpDiff = diff;
-                    }
-                }
-            }
-            //partC
-            for (int i = 0; i < 255; i++)
-            {
-                float p = (float)i / (float)(255);
-                var dir = isStart ? -VectorUtils.NormalizeXZ(partC.Tangent(p)) : VectorUtils.NormalizeXZ(partC.Tangent(p));
-                string result = isRound(startPos, startDir, partC.Position(p), dir, out float diff);
-                if (result == "Yes")
-                {
-                    NodeA = partC.Position(p);
-                    NodeADir = partC.Tangent(p);
-                    return;
-                }
-                else if (result == "Maybe")
-                {
-                    if (diff < tmpDiff)
-                    {
-                        tmpNodeA = partC.Position(p);
-                        tmpNodeADir = partC.Tangent(p);
-                        tmpDiff = diff;
-                    }
-                }
-            }
-            //partD
-            for (int i = 0; i < 255; i++)
-            {
-                float p = (float)i / (float)(255);
-                var dir = isStart ? -VectorUtils.NormalizeXZ(partD.Tangent(p)) : VectorUtils.NormalizeXZ(partD.Tangent(p));
-                string result = isRound(startPos, startDir, partD.Position(p), dir, out float diff);
-                if (result == "Yes")
-                {
-                    NodeA = partD.Position(p);
-                    NodeADir = partD.Tangent(p);
-                    return;
-                }
-                else if (result == "Maybe")
-                {
-                    if (diff < tmpDiff)
-                    {
-                        tmpNodeA = partD.Position(p);
-                        tmpNodeADir = partD.Tangent(p);
-                        tmpDiff = diff;
-                    }
-                }
-            }
-
-            if (tmpDiff != 100f)
-            {
-                NodeA = tmpNodeA;
-                NodeADir = tmpNodeADir;
-                tmpDiff1 = tmpDiff;
-            }
-
-            startDir = -startDir;
-            //partA
-            for (int i = 0; i < 255; i++)
-            {
-                float p = (float)i / (float)(255);
-                var dir = isStart ? -VectorUtils.NormalizeXZ(partA.Tangent(p)) : VectorUtils.NormalizeXZ(partA.Tangent(p));
-                string result = isRound(startPos, startDir, partA.Position(p), dir, out float diff);
-                if (result == "Yes")
-                {
-                    NodeA = partA.Position(p);
-                    NodeADir = partA.Tangent(p);
-                    startDirFix = startDir;
-                    return;
-                }
-                else if (result == "Maybe")
-                {
-                    if (diff < tmpDiff1)
-                    {
-                        tmpNodeA = partA.Position(p);
-                        tmpNodeADir = partA.Tangent(p);
-                        tmpDiff1 = diff;
-                    }
-                }
-            }
-            //partB
-            for (int i = 0; i < 255; i++)
-            {
-                float p = (float)i / (float)(255);
-                var dir = isStart ? -VectorUtils.NormalizeXZ(partB.Tangent(p)) : VectorUtils.NormalizeXZ(partB.Tangent(p));
-                string result = isRound(startPos, startDir, partB.Position(p), dir, out float diff);
-                if (result == "Yes")
-                {
-                    NodeA = partB.Position(p);
-                    NodeADir = partB.Tangent(p);
-                    startDirFix = startDir;
-                    return;
-                }
-                else if (result == "Maybe")
-                {
-                    if (diff < tmpDiff1)
-                    {
-                        tmpNodeA = partB.Position(p);
-                        tmpNodeADir = partB.Tangent(p);
-                        tmpDiff1 = diff;
-                    }
-                }
-            }
-            //partC
-            for (int i = 0; i < 255; i++)
-            {
-                float p = (float)i / (float)(255);
-                var dir = isStart ? -VectorUtils.NormalizeXZ(partC.Tangent(p)) : VectorUtils.NormalizeXZ(partC.Tangent(p));
-                string result = isRound(startPos, startDir, partC.Position(p), dir, out float diff);
-                if (result == "Yes")
-                {
-                    NodeA = partC.Position(p);
-                    NodeADir = partC.Tangent(p);
-                    startDirFix = startDir;
-                    return;
-                }
-                else if (result == "Maybe")
-                {
-                    if (diff < tmpDiff1)
-                    {
-                        tmpNodeA = partC.Position(p);
-                        tmpNodeADir = partC.Tangent(p);
-                        tmpDiff1 = diff;
-                    }
-                }
-            }
-            //partD
-            for (int i = 0; i < 255; i++)
-            {
-                float p = (float)i / (float)(255);
-                var dir = isStart ? -VectorUtils.NormalizeXZ(partD.Tangent(p)) : VectorUtils.NormalizeXZ(partD.Tangent(p));
-                string result = isRound(startPos, startDir, partD.Position(p), dir, out float diff);
-                if (result == "Yes")
-                {
-                    NodeA = partD.Position(p);
-                    NodeADir = partD.Tangent(p);
-                    startDirFix = startDir;
-                    return;
-                }
-                else if (result == "Maybe")
-                {
-                    if (diff < tmpDiff1)
-                    {
-                        tmpNodeA = partD.Position(p);
-                        tmpNodeADir = partD.Tangent(p);
-                        tmpDiff1 = diff;
-                    }
-                }
-            }
-
-            if (tmpDiff != tmpDiff1)
-            {
-                NodeA = tmpNodeA;
-                NodeADir = tmpNodeADir;
-                startDirFix = startDir;
-            }
+            // construct the vector from startPos to center
+            Vector2 dist = VectorUtils.XZ(center - startPos);
+            Vector2 startDir2 = VectorUtils.XZ(startDir).normalized;
+            // The correct startdir must have an acute angle between dist
+            if (Vector2.Dot(startDir2, dist) < 0) startDir2 = -startDir2;
+            // isStart controls the normal direction towards the center of the small circle
+            // RIGHT-hand normal if isStart==true otherwise LEFT-hand
+            Vector2 startNormal = new Vector2(startDir2.y, -startDir2.x);
+            if (!isStart) startNormal = -startNormal;
+            float phi = Vector2.Angle(startNormal, dist) * RAD;
+            // radius of the small circle
+            float r1 = (dist.sqrMagnitude - radius * radius) / (2 * radius + 2 * dist.magnitude * Mathf.Cos(phi));
+            // calculate the central angle for NodeA
+            float sinTheta = dist.magnitude * Mathf.Sin(phi) / (radius + r1);
+            float cosTheta = Mathf.Sqrt(1 - sinTheta * sinTheta);
+            if (!isStart) sinTheta = -sinTheta;
+            // calculte NodeA position and tangent
+            Vector2 nodeANormal = new Vector2(startNormal.x * cosTheta + startNormal.y * sinTheta, -startNormal.x * sinTheta + startNormal.y * cosTheta);
+            Vector2 nodeA2 = VectorUtils.XZ(startPos) + (startNormal - nodeANormal) * r1;
+            NodeA = new Vector3(nodeA2.x, startPos.y, nodeA2.y); 
+            NodeADir = new Vector3(-nodeANormal.y, 0, nodeANormal.x);
+            if (!isStart) NodeADir = -NodeADir;
+            startDirFix = new Vector3(startDir2.x, 0, startDir2.y);
+            Debug.Log($"radius={radius}, phi={phi}, r1={r1}, sinTheta={sinTheta}, cosTheta={cosTheta}");
         }
+
         public void FindNodeB(Vector3 startPos, Vector3 startDir, Bezier3 partA, Bezier3 partB, Bezier3 partC, Bezier3 partD, out Vector3 NodeB, out Vector3 NodeBDir)
         {
             NodeB = Vector3.zero;
@@ -2002,7 +1826,8 @@ namespace AdvancedRoadTools.Tools
             }
         }
 
-        public void FindRound(Vector3 pos1, Vector3 pos2, Vector3 pos3, Vector3 endDir, float radius, out Vector3 startPos, out Vector3 roundCenterPos, out Vector3 endPos, out Vector3 startDir, out Vector3 endDirFix)
+        public void FindRound(Vector3 pos1, Vector3 pos2, Vector3 pos3, Vector3 endDir, float radius, out Vector3 startPos, 
+            out Vector3 roundCenterPos, out Vector3 endPos, out Vector3 startDir, out Vector3 endDirFix)
         {
             radius *= 8;
             startDir = VectorUtils.NormalizeXZ(pos2 - pos1);
