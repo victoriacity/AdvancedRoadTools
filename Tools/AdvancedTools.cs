@@ -1673,7 +1673,6 @@ namespace AdvancedRoadTools.Tools
             Vector2 nodeA2 = VectorUtils.XZ(startPos) + (startNormal - nodeANormal) * r1;
             NodeA = new Vector3(nodeA2.x, startPos.y, nodeA2.y); 
             NodeADir = new Vector3(-nodeANormal.y, 0, nodeANormal.x);
-            if (!isStart) NodeADir = -NodeADir;
             startDirFix = new Vector3(startDir2.x, 0, startDir2.y);
             Debug.Log($"radius={radius}, phi={phi}, r1={r1}, sinTheta={sinTheta}, cosTheta={cosTheta}");
         }
