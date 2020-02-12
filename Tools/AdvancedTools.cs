@@ -2079,46 +2079,28 @@ namespace AdvancedRoadTools.Tools
         public void GetRoundCurve(Vector3 startPos, Vector3 roundCenterPos, Vector3 endPos, byte idex, out Vector3 pos, out Vector3 dir)
         {
             int i = 0;
-            var tmpStartPos = startPos;
-            while (true)
+            const float RADIUS_TOL = 4f;
+            const float RAD = Mathf.PI / 180;
+            Vector3 startRadius = startPos - roundCenterPos;
+            Vector3 endRadius = endPos - roundCenterPos;
+            float centralAngle = 360;
+            if (Mathf.Abs(startRadius.magnitude - endRadius.magnitude) >= RADIUS_TOL)
             {
-                i++;
-                var tmpdir = tmpStartPos - roundCenterPos;
-                //[x*cosA+z*sinA  -x*sinA+z*cosA]  1 degree
-                double degree = 2 * Math.PI / 360;
-                tmpdir = new Vector3((float)(tmpdir.x * Math.Cos(degree) + tmpdir.z * Math.Sin(degree)), 0, (float)(-tmpdir.x * Math.Sin(degree) + tmpdir.z * Math.Cos(degree)));
-                tmpStartPos = roundCenterPos + tmpdir;
-                if (Vector2.Distance(VectorUtils.XZ(tmpStartPos), VectorUtils.XZ(endPos)) < 4f)
+                DebugLog.LogToFileOnly("Error: did not find curve in 360 degree");
+            } else
+            {
+                // the value from arccos, only between 0 and 180
+                centralAngle = Vector2.Angle(VectorUtils.XZ(startRadius), VectorUtils.XZ(endRadius));
+                // use the cross product to determine whether end is at start's right hand side
+                if (endRadius.x * startRadius.z - startRadius.x * endRadius.z < 0)
                 {
-                    if (i < 180)
-                    {
-                        DebugLog.LogToFileOnly("Error, Find curve < degree 180, degree = " + i.ToString());
-                    }
-                    else
-                    {
-                        DebugLog.LogToFileOnly("Find curve in degree =" + i.ToString());
-                    }
-                    break;
-                }
-                if (i > 360)
-                {
-                    DebugLog.LogToFileOnly("Error: did not find curve in 360 degree");
-                    break;
+                    centralAngle = 360 - centralAngle;
                 }
             }
-
-            tmpStartPos = startPos;
-            for (int j = 0; j < idex; j ++)
-            {
-                var tmpdir = tmpStartPos - roundCenterPos;
-                //[x*cosA+z*sinA  -x*sinA+z*cosA]  1 degree
-                double degree = (double)(2 * Math.PI * i) / (double)(360 * 255) ;
-                tmpdir = new Vector3((float)(tmpdir.x * Math.Cos(degree) + tmpdir.z * Math.Sin(degree)), 0, (float)(-tmpdir.x * Math.Sin(degree) + tmpdir.z * Math.Cos(degree)));
-                tmpStartPos = roundCenterPos + tmpdir;
-            }
-
-            pos = tmpStartPos;
-            dir = tmpStartPos - roundCenterPos;
+            float cos = Mathf.Cos(centralAngle * idex / 255 * RAD);
+            float sin = Mathf.Sin(centralAngle * idex / 255 * RAD);
+            dir = new Vector3(startRadius.x * cos + startRadius.z * sin, 0, -startRadius.x * sin + startRadius.z * cos);
+            pos = roundCenterPos + dir;
             dir = new Vector3(dir.z, 0, -dir.x);
             dir = VectorUtils.NormalizeXZ(dir);
         }
