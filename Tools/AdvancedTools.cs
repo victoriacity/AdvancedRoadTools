@@ -17,6 +17,8 @@ namespace AdvancedRoadTools.Tools
     public class AdvancedTools : ToolBase
     {
         //private static MethodInfo RenderSegment = typeof(NetTool).GetMethod("RenderSegment", BindingFlags.NonPublic | BindingFlags.Static);
+        const float RAD = Mathf.PI / 180;
+
         public static AdvancedTools instance;
         public static ushort m_hover;
         public static ushort m_hoverSegment;
@@ -2000,87 +2002,49 @@ namespace AdvancedRoadTools.Tools
             }
         }
 
-        public void FindRound(Vector3 pos1, Vector3 pos2, Vector3 pos3, Vector3 endir, float radius, out Vector3 startPos, out Vector3 roundCenterPos, out Vector3 endPos, out Vector3 startDir, out Vector3 endirFix)
+        public void FindRound(Vector3 pos1, Vector3 pos2, Vector3 pos3, Vector3 endDir, float radius, out Vector3 startPos, out Vector3 roundCenterPos, out Vector3 endPos, out Vector3 startDir, out Vector3 endDirFix)
         {
-            var dir1 = VectorUtils.NormalizeXZ(pos2 - pos1);
-            var dir2 = VectorUtils.NormalizeXZ(endir);
-            endirFix = VectorUtils.NormalizeXZ(endir);
-            startDir = dir1;
-            Vector3 dir3 = new Vector3(dir1.z, 0, -dir1.x);
-            Vector3 dir4 = new Vector3(-dir2.z, 0, dir2.x);
-
-            var tmpDistance = 100f;
-            startPos = Vector3.zero;
-            roundCenterPos = Vector3.zero;
-            endPos = Vector3.zero;
-            var tmpStartPos = Vector3.zero;
-            var tmpEndPos = Vector3.zero;
-            var tmpRoundCenterPos = Vector3.zero;
-            //return (startPos + point * 2 * dir);
-            for (int i = 0; i < 256; i++)
+            radius *= 8;
+            startDir = VectorUtils.NormalizeXZ(pos2 - pos1);
+            endDirFix = VectorUtils.NormalizeXZ(endDir);
+            // calculate the intersection between start and end directions
+            Line2 startSegment = new Line2(VectorUtils.XZ(pos2), VectorUtils.XZ(pos2 + startDir));
+            Line2 endSegment = new Line2(VectorUtils.XZ(pos3), VectorUtils.XZ(pos3 + endDirFix));
+            float tStart, tEnd;
+            if (!startSegment.Intersect(endSegment, out tStart, out tEnd))
             {
-                var point = pos1 + 8 * i * dir1;
-                var point1 = point + (8 * radius * dir3) + (8 * radius * dir4);
-                var point2 = point + (8 * radius * dir3);
-                var tmpDir = VectorUtils.NormalizeXZ(pos3 - point1);
-                var distance = Vector2.Distance(VectorUtils.XZ(tmpDir), VectorUtils.XZ(dir2));
-                if (distance < 0.1f)
-                {
-                    if (distance < tmpDistance)
-                    {
-                        tmpStartPos = point;
-                        tmpEndPos = point1;
-                        tmpRoundCenterPos = point2;
-                        tmpDistance = distance;
-                    }
-                }
+                DebugLog.LogToFileOnly("Warning: start and end directions are parallel, radius has to be fixed!");
+                // cannot create curve in this case, return zero vectors
+                startPos = Vector3.zero;
+                roundCenterPos = Vector3.zero;
+                endPos = Vector3.zero;
+                return;
             }
-
-            if (tmpDistance != 100f)
+            // determine if we need to reverse the end direction to make a CLOCKWISE circle
+            // tStart and tEnd should be of opposite signs, otherwise endDir should be reversed
+            if (tStart * tEnd > 0)
             {
-                startPos = tmpStartPos;
-                endPos = tmpEndPos;
-                roundCenterPos = tmpRoundCenterPos;
+                endDirFix = -endDirFix;
+                tEnd = -tEnd;
             }
-
-            dir2 = -VectorUtils.NormalizeXZ(endir);
-            float tmpDistance1 = tmpDistance;
-            dir3 = new Vector3(dir1.z, 0, -dir1.x);
-            dir4 = new Vector3(-dir2.z, 0, dir2.x);
-
-            for (int i = 0; i < 256; i++)
-            {
-                var point = pos1 + 8 * i * dir1;
-                var point1 = point + (8 * radius * dir3) + (8 * radius * dir4);
-                var point2 = point + (8 * radius * dir3);
-                var tmpDir = VectorUtils.NormalizeXZ(pos3 - point1);
-                var distance = Vector2.Distance(VectorUtils.XZ(tmpDir), VectorUtils.XZ(dir2));
-                if (distance < 0.1f)
-                {
-                    if (distance < tmpDistance1)
-                    {
-                        tmpStartPos = point;
-                        tmpEndPos = point1;
-                        tmpRoundCenterPos = point2;
-                        tmpDistance1 = distance;
-                    }
-                }
-            }
-
-            if (tmpDistance != tmpDistance1)
-            {
-                startPos = tmpStartPos;
-                endPos = tmpEndPos;
-                roundCenterPos = tmpRoundCenterPos;
-                endirFix = dir2;
-            }
+            // Calculate central angle
+            float angle = Mathf.Abs(Vector2.Angle(VectorUtils.XZ(startDir), VectorUtils.XZ(endDirFix)));
+            //DebugLog.LogToFileOnly($"Intersection: tStart = {tStart}, tEnd = {tEnd}");
+            if (endDirFix.x * startDir.z - startDir.x * endDirFix.z > 0) angle = 360 - angle;
+            // calculate startPos, the distances between startPos-intersection and endPos-intersections are equal
+            float dist = radius * Mathf.Tan(angle / 2 * RAD);
+            //DebugLog.LogToFileOnly($"Angle = {angle}, dist = {dist}");
+            startPos = pos2 + startDir * (tStart + dist);
+            endPos = pos3 + endDirFix * (tEnd - dist);
+            // Calculate center position
+            Vector3 endRadiusDir = new Vector3(endDirFix.z, 0, -endDirFix.x);
+            roundCenterPos = endPos + endRadiusDir * radius;
         }
 
         public void GetRoundCurve(Vector3 startPos, Vector3 roundCenterPos, Vector3 endPos, byte idex, out Vector3 pos, out Vector3 dir, bool isClockwise)
         {
             int i = 0;
             const float RADIUS_TOL = 4f;
-            const float RAD = Mathf.PI / 180;
             Vector3 startRadius = startPos - roundCenterPos;
             Vector3 endRadius = endPos - roundCenterPos;
             if (Mathf.Abs(startRadius.magnitude - endRadius.magnitude) >= RADIUS_TOL)
