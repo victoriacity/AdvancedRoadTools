@@ -62,17 +62,10 @@
     <Compile Include="AdvancedRoadTools.cs" />
     <Compile Include="Loader.cs" />
     <Compile Include="NewData\CustomNetSegment.cs" />
-    <Compile Include="NewManager\CustomNetManager.cs" />
-    <Compile Include="Threading.cs" />
     <Compile Include="UI\SmoothButton.cs" />
-    <Compile Include="UI\FixButton.cs" />
     <Compile Include="UI\YRoadButton.cs" />
-    <Compile Include="Util\HarmonyDetours.cs" />
     <Compile Include="Util\DebugLog.cs" />
     <Compile Include="Util\Localization.cs" />
-    <Compile Include="Util\MainDataStore.cs" />
-    <Compile Include="Util\RedirectionHelper.cs" />
-    <Compile Include="Util\SaveAndStore.cs" />
     <Compile Include="Util\SpriteUtilities.cs" />
     <Compile Include="Tools\AdvancedTools.cs" />
     <Compile Include="UI\OneRoundButton.cs" />
@@ -83,6 +76,7 @@
   </ItemGroup>
   <ItemGroup />
   <ItemGroup>
+    <Content Include="PreviewImage.png" />
     <Content Include="Resources\de.txt" />
     <Content Include="Resources\es.txt" />
     <Content Include="Resources\fr.txt" />
