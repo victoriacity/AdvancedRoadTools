@@ -2076,26 +2076,27 @@ namespace AdvancedRoadTools.Tools
             }
         }
 
-        public void GetRoundCurve(Vector3 startPos, Vector3 roundCenterPos, Vector3 endPos, byte idex, out Vector3 pos, out Vector3 dir)
+        public void GetRoundCurve(Vector3 startPos, Vector3 roundCenterPos, Vector3 endPos, byte idex, out Vector3 pos, out Vector3 dir, bool isClockwise)
         {
             int i = 0;
             const float RADIUS_TOL = 4f;
             const float RAD = Mathf.PI / 180;
             Vector3 startRadius = startPos - roundCenterPos;
             Vector3 endRadius = endPos - roundCenterPos;
-            float centralAngle = 360;
             if (Mathf.Abs(startRadius.magnitude - endRadius.magnitude) >= RADIUS_TOL)
             {
-                DebugLog.LogToFileOnly("Error: did not find curve in 360 degree");
-            } else
+                DebugLog.LogToFileOnly("Warning, endPos is not on the circle!");
+            } 
+            // the value from arccos, only between 0 and 180
+            float centralAngle = Vector2.Angle(VectorUtils.XZ(startRadius), VectorUtils.XZ(endRadius));
+            // use the cross product to determine whether end is at start's right hand side
+            if (endRadius.x * startRadius.z - startRadius.x * endRadius.z < 0)
             {
-                // the value from arccos, only between 0 and 180
-                centralAngle = Vector2.Angle(VectorUtils.XZ(startRadius), VectorUtils.XZ(endRadius));
-                // use the cross product to determine whether end is at start's right hand side
-                if (endRadius.x * startRadius.z - startRadius.x * endRadius.z < 0)
-                {
-                    centralAngle = 360 - centralAngle;
-                }
+                centralAngle = 360 - centralAngle;
+            }
+            if (!isClockwise)
+            {
+                centralAngle -= 360;
             }
             float cos = Mathf.Cos(centralAngle * idex / 255 * RAD);
             float sin = Mathf.Sin(centralAngle * idex / 255 * RAD);
@@ -2167,15 +2168,15 @@ namespace AdvancedRoadTools.Tools
             partA.d = NodeA1;
             CustomNetSegment.CalculateMiddlePoints(m_pos1, VectorUtils.NormalizeXZ(m_pos1 - m_pos0), NodeA1, -VectorUtils.NormalizeXZ(NodeA1Dir), true, true, out partA.b, out partA.c);
             partB.a = NodeA1;
-            GetRoundCurve(NodeA1, RoundCenter, NodeA2, 63, out Vector3 NodeB1, out Vector3 NodeB1Dir);
+            GetRoundCurve(NodeA1, RoundCenter, NodeA2, 63, out Vector3 NodeB1, out Vector3 NodeB1Dir, true);
             partB.d = NodeB1;
             CustomNetSegment.CalculateMiddlePoints(NodeA1, VectorUtils.NormalizeXZ(NodeA1Dir), NodeB1, -NodeB1Dir, true, true, out partB.b, out partB.c);
             partC.a = NodeB1;
-            GetRoundCurve(NodeA1, RoundCenter, NodeA2, 127, out Vector3 NodeB2, out Vector3 NodeB2Dir);
+            GetRoundCurve(NodeA1, RoundCenter, NodeA2, 127, out Vector3 NodeB2, out Vector3 NodeB2Dir, true);
             partC.d = NodeB2;
             CustomNetSegment.CalculateMiddlePoints(NodeB1, NodeB1Dir, NodeB2, -NodeB2Dir, true, true, out partC.b, out partC.c);
             partC1.a = NodeB2;
-            GetRoundCurve(NodeA1, RoundCenter, NodeA2, 191, out Vector3 NodeB21, out Vector3 NodeB21Dir);
+            GetRoundCurve(NodeA1, RoundCenter, NodeA2, 191, out Vector3 NodeB21, out Vector3 NodeB21Dir, true);
             partC1.d = NodeB21;
             CustomNetSegment.CalculateMiddlePoints(NodeB2, NodeB2Dir, NodeB21, -NodeB21Dir, true, true, out partC1.b, out partC1.c);
             partD.a = NodeB21;
@@ -2394,8 +2395,8 @@ namespace AdvancedRoadTools.Tools
             {
                 float p1 = (float)(i + 1) / (float)(partRoundNum + 1);
                 float p2 = (float)(i) / (float)(partRoundNum + 1);
-                GetRoundCurve(NodeA1, RoundCenter, NodeA2, (byte)(p1 * 255f), out Vector3 nodePos, out Vector3 nodeDir);
-                GetRoundCurve(NodeA1, RoundCenter, NodeA2, (byte)(p2 * 255f), out Vector3 preNodePos, out Vector3 preNodeDir);
+                GetRoundCurve(NodeA1, RoundCenter, NodeA2, (byte)(p1 * 255f), out Vector3 nodePos, out Vector3 nodeDir, true);
+                GetRoundCurve(NodeA1, RoundCenter, NodeA2, (byte)(p2 * 255f), out Vector3 preNodePos, out Vector3 preNodeDir, true);
                 if (!onlyShow)
                 {
                     if (!OptionUI.isSmoothMode)
